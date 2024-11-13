@@ -1,4 +1,4 @@
-use image::{io::Reader as ImageReader, GenericImageView};
+use image::{GenericImageView, ImageReader};
 use std::path::Path;
 
 pub type Color = [f32; 3];
