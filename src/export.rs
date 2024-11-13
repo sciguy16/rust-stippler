@@ -1,11 +1,12 @@
-use crate::{Canvas, Weighted_Canvas, canvas::color};
-extern crate image;
-use image::{Rgb, RgbImage};
-use voronoi::Point;
-use crate::seed::Seeds;
-use crate::rasterize_circle;
-use std::error::Error;
+use crate::{
+    canvas::{Canvas, Color},
+    rasterize::rasterize_circle,
+    seed::Seeds,
+};
 use csv::Writer;
+use image::{Rgb, RgbImage};
+use std::error::Error;
+use voronoi::Point;
 
 pub fn save_image(path: &str, canvas: Canvas) {
     let width = canvas.pixels.len() as u32;
@@ -22,12 +23,12 @@ pub fn save_image(path: &str, canvas: Canvas) {
             r = (color[0] * 255.0).round() as u8;
             g = (color[1] * 255.0).round() as u8;
             b = (color[2] * 255.0).round() as u8;
-            
-            img.put_pixel(x, y, Rgb([r,g,b]));            
+
+            img.put_pixel(x, y, Rgb([r, g, b]));
         }
     }
     // println!("{} exported.", path);
-    
+
     img.save(path).expect("Could not save image");
 }
 pub fn save_rgb_image(path: &str, canvas: Canvas) {
@@ -45,38 +46,25 @@ pub fn save_rgb_image(path: &str, canvas: Canvas) {
             r = color[0].round() as u8;
             g = color[1].round() as u8;
             b = color[2].round() as u8;
-            
-            img.put_pixel(x, y, Rgb([r,g,b]));            
+
+            img.put_pixel(x, y, Rgb([r, g, b]));
         }
     }
     // println!("{} exported.", path);
-    
+
     img.save(path).expect("Could not save image");
 }
 
-
-pub fn save_grayscale_png(path: &str, canvas: Weighted_Canvas) { // rework with generics/traits later
-    let width = canvas.pixel_weights.len() as u32;
-    let height = canvas.pixel_weights[0].len() as u32;
-
-    let mut img = RgbImage::new(width, height);
-    let mut g;
-    let mut value: f32;
-    for x in 0..width {
-        for y in 0..height {
-            value = canvas.pixel_weights[x as usize][y as usize];
-            g = (value * 255.0).round() as u8;
-            
-            img.put_pixel(x, y, Rgb([g,g,g])); //just using RGB with equal r/g/b values        
-        }
-    }
-    // println!("{} exported.", path);
-    
-    img.save(path).expect("Could not save png");
-}
-
-pub fn visualize_frame(frame: u16, seeds: &Seeds, width: usize, height: usize, scale: usize, background_color: color, dot_color: color ) {
-    let mut canvas = Canvas::solid_color(width * scale, width * scale,background_color);
+pub fn visualize_frame(
+    frame: u16,
+    seeds: &Seeds,
+    width: usize,
+    _height: usize,
+    scale: usize,
+    background_color: Color,
+    _dot_color: Color,
+) {
+    let mut canvas = Canvas::solid_color(width * scale, width * scale, background_color);
     let mut file_name = "sequence/".to_string();
     let mut scaled_point: Point;
     let (mut x, mut y);
@@ -84,10 +72,10 @@ pub fn visualize_frame(frame: u16, seeds: &Seeds, width: usize, height: usize, s
         //hacky, need to fix this
         x = f64::try_from(point.x).unwrap() * scale as f64;
         y = f64::try_from(point.y).unwrap() * scale as f64;
-        scaled_point = Point::new(x,y);
+        scaled_point = Point::new(x, y);
         rasterize_circle(&scaled_point, 4, [0.0, 0.0, 0.0], &mut canvas)
     }
-    
+
     file_name.push_str(&frame.to_string());
     file_name.push_str(".jpg");
     save_image(&file_name[..], canvas);
@@ -99,10 +87,8 @@ pub fn export_points(path: &str, points: &Vec<Point>) -> Result<(), Box<dyn Erro
     for point in points {
         x = point.x.to_string();
         y = point.y.to_string();
-        wtr.write_record(&[x,y]);
+        wtr.write_record(&[x, y])?;
     }
     wtr.flush()?;
     Ok(())
-
-
 }

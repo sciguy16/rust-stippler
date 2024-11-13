@@ -1,28 +1,25 @@
-use std::f32::consts::PI;
-
 use nalgebra::Matrix1x3;
-use voronoi::{Point, DCEL};
-use radsort;
-pub type point = [f64; 2];
-pub type pixel = [i32; 2];
-pub struct Ordered_Polygon {
+use voronoi::Point as VoronoiPoint;
+pub type Point = [f64; 2];
+pub type Pixel = [i32; 2];
+pub struct OrderedPolygon {
     pub vertices: Vec<[f64; 2]>,
 }
 
-pub struct Unordered_Polygon {
+pub struct UnorderedPolygon {
     pub vertices: Vec<[f64; 2]>,
 }
 
 pub struct Line {
-    pub points: [point; 2],
+    pub points: [Point; 2],
 }
 
 //return the nearest pixel as the floor of each floating point coordinate
-pub fn nearest_pixel(point: &Point) -> pixel {
+pub fn nearest_pixel(point: &VoronoiPoint) -> Pixel {
     [point.x.round() as i32, point.y.round() as i32]
 }
 
-pub fn distance(a: &pixel, b: &pixel) -> f64 {
+pub fn distance(a: &Pixel, b: &Pixel) -> f64 {
     let _x = (b[0] - a[0]).pow(2) as f64;
     let _y = (b[1] - a[1]).pow(2) as f64;
 
@@ -44,7 +41,7 @@ pub fn vertex_centroid(points: &Vec<[f64; 2]>) -> [f64; 2] {
     [x, y]
 }
 
-impl Ordered_Polygon {
+impl OrderedPolygon {
     pub fn create_edges(&self) -> Vec<Line> {
         let n = self.vertices.len();
         let mut lines = Vec::new();
@@ -59,45 +56,19 @@ impl Ordered_Polygon {
 
         lines
     }
-
-    pub fn ngon(center: [f64; 2], radius: f64, sides: u8) -> Self {
-
-        let mut vertices = Vec::new();
-        let mut temp_point;
-        let (mut x, mut y);
-        let mut theta: f64 = 0.0;
-        let inc = 2.0 * PI as f64 / sides as f64;
-
-
-        for t in 0..sides {
-            x = &radius * theta.cos();
-            y = &radius * theta.sin();
-            temp_point = [x + center[0], y + center[1]];
-            vertices.push(temp_point);
-            theta += inc;
-        };
-
-        Self {  
-            vertices : vertices
-        }
-
-    }
 }
 
-impl Unordered_Polygon {
-
-    pub fn from_face(face: &Vec<Point>) -> Self {
+impl UnorderedPolygon {
+    pub fn from_face(face: &[VoronoiPoint]) -> Self {
         //map the ordered floats into normal floats. Probably not ideal
-        let vertices = face.iter()
-        .map(|x| [f64::try_from(x.x).unwrap(),
-        f64::try_from(x.y).unwrap()
-        ]).collect();
-        Self {
-            vertices: vertices
-        }
+        let vertices = face
+            .iter()
+            .map(|x| [f64::try_from(x.x).unwrap(), f64::try_from(x.y).unwrap()])
+            .collect();
+        Self { vertices }
     }
 
-    pub fn sort(&mut self) -> Ordered_Polygon {
+    pub fn sort(&mut self) -> OrderedPolygon {
         let mut sorted = Vec::new();
         let centroid = vertex_centroid(&self.vertices);
         let mut x;
@@ -129,27 +100,12 @@ impl Unordered_Polygon {
         radsort::sort_by_key(&mut sorted, |k| k.1);
         let verts = sorted.iter().map(|x| *x.0).collect::<Vec<[f64; 2]>>();
 
-        Ordered_Polygon { vertices: verts }
+        OrderedPolygon { vertices: verts }
     }
 }
 
-
 impl Line {
-    pub fn from_halfedge(edge: usize, diagram: &DCEL) -> Self {
-        let twin = &diagram.halfedges[edge].twin;
-        let start = diagram.get_origin(edge);
-        let end = diagram.get_origin(*twin);
-        Self {
-            points: [[*start.x, *start.y], [*end.x, *end.y]],
-        }
-    }
-    pub fn from_segment(seg: &[Point; 2]) -> Self {
-        Self {
-            points: [[*seg[0].x, *seg[0].y], [*seg[1].x, *seg[1].y]],
-        }
-    }
-
-    pub fn from_nodes(nodes: &Vec<pixel>) -> Self {
+    pub fn from_nodes(nodes: &[Pixel]) -> Self {
         //assumes exactly 2 nodes
         Self {
             points: [
@@ -159,7 +115,7 @@ impl Line {
         }
     }
 
-    pub fn line_intersection(&self, other: &Line) -> pixel {
+    pub fn line_intersection(&self, other: &Line) -> Pixel {
         let x1 = self.points[0][0];
         let y1 = self.points[0][1];
         let x2 = self.points[1][0];
@@ -178,8 +134,8 @@ impl Line {
 
         let p_x = p_x_num / p_x_denom;
         let p_y = p_y_num / p_y_denom;
-        let intersect_point = Point::new(p_x, p_y);
+        let intersect_point = VoronoiPoint::new(p_x, p_y);
 
-        return nearest_pixel(&intersect_point);
+        nearest_pixel(&intersect_point)
     }
 }
