@@ -7,7 +7,7 @@ mod relax;
 mod seed;
 
 use canvas::{random_color, Canvas, Weighted_Canvas};
-use export::{save_image, save_rgb_image, export_points};
+use export::{export_points, save_image, save_rgb_image};
 use geometry::Unordered_Polygon;
 use rasterize::{
     color_sampled_voronoi, rasterize_circle, scanline_rasterize_polygon, weighted_raster_centroid,
@@ -15,9 +15,9 @@ use rasterize::{
 use seed::Seeds;
 use std::process;
 extern crate voronoi;
+use clap::Parser;
 use cli::Opt;
 use relax::lloyd_relax;
-use structopt::StructOpt;
 use voronoi::voronoi;
 
 use crate::cli::print_help;
@@ -31,7 +31,7 @@ fn main() {
 
     // ARGUMENTS //
 
-    let opt = Opt::from_args();
+    let opt = Opt::parse();
     let image_path = opt.input.to_str().unwrap();
     let points: usize = opt.count;
     let iterations: u16 = opt.iterations;
@@ -39,8 +39,11 @@ fn main() {
     let cartesian_spacing: u32 = opt.cartesian_spacing;
     let save_frames: bool = opt.frames;
     let save_mosaic: bool = opt.save_mosaic;
-    let display_help: bool = opt.display_help;
-    if display_help {print_help(); process::exit(1)};
+    let display_help: bool = false;
+    if display_help {
+        print_help();
+        process::exit(1)
+    };
 
     // --------- //
     //weight canvas
@@ -87,6 +90,4 @@ fn main() {
         save_rgb_image("mosaic.png", color_canvas);
         println!("\tmosaic.jpg");
     }
-
-
 }

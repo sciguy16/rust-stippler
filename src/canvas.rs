@@ -1,12 +1,13 @@
-use rand::Rng;
-use image::GenericImageView;
 use image::io::Reader as ImageReader;
+use image::GenericImageView;
+use rand::Rng;
 
 pub type color = [f32; 3];
 pub struct Canvas {
     pub pixels: Vec<Vec<color>>,
 }
-pub struct Weighted_Canvas { //grayscale
+pub struct Weighted_Canvas {
+    //grayscale
     pub pixel_weights: Vec<Vec<f32>>,
 }
 
@@ -20,7 +21,10 @@ impl Weighted_Canvas {
     }
 
     pub fn from_image(path: &str) -> Self {
-        let img = ImageReader::open(path).expect("Error.").decode().expect("Error.");
+        let img = ImageReader::open(path)
+            .expect("Error.")
+            .decode()
+            .expect("Error.");
         let width = img.width() as usize;
         let height = img.height() as usize;
         let (mut r, mut g, mut b);
@@ -32,13 +36,13 @@ impl Weighted_Canvas {
             b = pixel.2[2] as f32;
             x = pixel.0 as usize;
             y = pixel.1 as usize;
+
             pixels[x][y] = (r + g + b) / (3.0 * 255.0);
-        };
+        }
         Self {
-            pixel_weights: pixels
+            pixel_weights: pixels,
         }
     }
-    
 }
 
 impl Canvas {
@@ -66,12 +70,15 @@ impl Canvas {
         }
     }
     pub fn from_image(path: &str) -> Self {
-        let img = ImageReader::open(path).expect("Error.").decode().expect("Error.");
+        let img = ImageReader::open(path)
+            .expect("Error.")
+            .decode()
+            .expect("Error.");
         let width = img.width() as usize;
         let height = img.height() as usize;
         let (mut r, mut g, mut b);
         let (mut x, mut y);
-        let mut pixels = vec![vec![[0.0;3]; width]; height];
+        let mut pixels = vec![vec![[0.0; 3]; width]; height];
         for pixel in img.pixels() {
             r = pixel.2[0] as f32;
             g = pixel.2[1] as f32;
@@ -79,10 +86,8 @@ impl Canvas {
             x = pixel.0 as usize;
             y = pixel.1 as usize;
             pixels[x][y] = [r, g, b];
-        };
-        Self {
-            pixels: pixels
         }
+        Self { pixels: pixels }
     }
     pub fn to_grayscale(&mut self) -> Weighted_Canvas {
         let w = self.pixels[0].len();
@@ -119,8 +124,5 @@ pub fn random_grayscale() -> color {
 }
 
 pub fn color_average(color: &color) -> f32 {
-
     (color[0] + color[1] + color[2]) as f32 / 3.0
-
 }
-
